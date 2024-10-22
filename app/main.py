@@ -17,21 +17,24 @@ intents = discord.Intents.default()
 intents.message_content = True
 
 client = discord.Bot(intents=intents) 
+guild_id = 0 # your server id
 
 sent_world_ids = set()
 
 
 @client.event
 async def on_ready():
-  # log
-  print(f'[System] logged in as {client.user}')
+  guild = client.get_guild(guild_id)
+  channel = get_channel_by_name(guild, 'bot-dev')
+  if channel is not None:
+    await channel.send('deployed successfully or bot restarted!')
 
 
 # - Main -
 async def send_nicknames_periodically():
   await client.wait_until_ready()
 
-  guild = discord.utils.get(client.guilds)
+  guild = client.get_guild(guild_id)
 
   global sent_world_ids
 
@@ -73,7 +76,7 @@ async def send_nicknames_periodically():
 
           found = False
           for i in range(0, len(list_pace), 7):
-            if list_pace[i] in nickname:              
+            if list_pace[i] in nickname:
               # add :00
               for m in range(1, 7):
                 if list_pace[i + m].find(':') == -1:
@@ -85,8 +88,8 @@ async def send_nicknames_periodically():
           if not found:
             continue
 
-          # continue if enter nether
-          if event_id == 'rsg.enter_nether':
+          # continue if not in events
+          if event_id not in {'rsg.enter_bastion', 'rsg.enter_fortress', 'rsg.first_portal', 'rsg.enter_stronghold', 'rsg.enter_end', 'rsg.credits'}:
             continue
 
           # log
@@ -98,8 +101,8 @@ async def send_nicknames_periodically():
             f'ender_pearl: {ender_pearl_count}, blaze_rod: {blaze_rod_count}\n'
             f'{events_info}'
           )
-          print(f'found name, pb pace and pb: {list_pace[i]}/{list_pace[i+1]}/{list_pace[i+2]}/{list_pace[i+3]}/{list_pace[i+4]}/{list_pace[i+5]}/{list_pace[i+6]}') # name/fs/ss/b/e/ee/pb
-
+          print(f'find name, pb pace and pb: {list_pace[i]}/{list_pace[i+1]}/{list_pace[i+2]}/{list_pace[i+3]}/{list_pace[i+4]}/{list_pace[i+5]}/{list_pace[i+6]}') # name/fs/ss/b/e/ee/pb
+          
           # set data
           dt_now = datetime.datetime.now()
           time = convert_to_hh_mm_ss(max_igt)
@@ -107,7 +110,7 @@ async def send_nicknames_periodically():
           b_time = list_pace[i + 3]
           e_time = list_pace[i + 4]
           ee_time = list_pace[i + 5]
-          pb_time = list_pace[i + 6]      
+          pb_time = list_pace[i + 6]
           pbtitle= ''
           pbdif = ''
           item = ''
@@ -116,10 +119,13 @@ async def send_nicknames_periodically():
           # get role and misc
           if event_id == 'rsg.enter_bastion' or event_id == 'rsg.enter_fortress':
             if world_id in sent_world_ids:
-              if time_to_seconds(ss_time) > time_to_seconds(time):
-                role = discord.utils.get(guild.roles, name='*SSPB')
+              if sent_world_ids[world_id][0] == 'rsg.enter_bastion' or sent_world_ids[world_id][0] == 'rsg.enter_fortress':
+                if time_to_seconds(ss_time) > time_to_seconds(time):
+                  role = discord.utils.get(guild.roles, name='*SSPB')
+                else:
+                  role = discord.utils.get(guild.roles, name='*SS')
               else:
-                role = discord.utils.get(guild.roles, name='*SS')
+                role = discord.utils.get(guild.roles, name='*FS')
             else:
               role = discord.utils.get(guild.roles, name='*FS')
 
@@ -174,9 +180,12 @@ async def send_nicknames_periodically():
           )
           if item:
             message += f'{item}\n'
-          message += (
-            f'-# <@&{role.id}>'
-          )
+          if role is not None:
+            message += (
+              f'-# <@&{role.id}>'
+            )
+          else:
+            message += '-# role not found'
 
           # choose send channle
           if role and 'PB' in role.name:
@@ -185,7 +194,8 @@ async def send_nicknames_periodically():
             channel = get_channel_by_name(guild, 'not-pb-pace')
           
           # send message
-          await channel.send(message)
+          if channel is not None:
+            await channel.send(message)
 
           # save eventid and igt in worldid
           sent_world_ids[world_id] = [event_id, max_igt]
