@@ -32,176 +32,181 @@ async def on_ready():
 
 # - Main -
 async def send_nicknames_periodically():
-  await client.wait_until_ready()
+    await client.wait_until_ready()
 
-  guild = client.get_guild(guild_id)
+    guild = client.get_guild(guild_id)
 
-  global sent_world_ids
+    global sent_world_ids
 
-  while not client.is_closed():
-    data = await fetch_data()
+    while not client.is_closed():
+        try:
+            data = await fetch_data()
 
-    current_world_ids = {entry['worldId'] for entry in data if 'worldId' in entry}
+            current_world_ids = {entry['worldId'] for entry in data if 'worldId' in entry}
 
-    sent_world_ids = {world_id: sent_world_ids[world_id] for world_id in sent_world_ids if world_id in current_world_ids}
+            sent_world_ids = {world_id: sent_world_ids[world_id] for world_id in sent_world_ids if world_id in current_world_ids}
 
-    for entry in data:
-      # get world data
-      world_id = entry['worldId']
-      event_list = entry.get('eventList', [])
+            for entry in data:
+                # get world data
+                world_id = entry['worldId']
+                event_list = entry.get('eventList', [])
 
-      if event_list:
-        max_event = max(event_list, key=lambda event: event.get('igt', -1))
-        max_igt = max_event.get('igt', -1)
-        event_id = max_event.get('eventId', None)
+                if event_list:
+                    max_event = max(event_list, key=lambda event: event.get('igt', -1))
+                    max_igt = max_event.get('igt', -1)
+                    event_id = max_event.get('eventId', None)
 
-        if world_id not in sent_world_ids or max_igt > sent_world_ids[world_id][1]:
-          # get basic data
-          game_version = entry.get('gameVersion', None)
-          if game_version != '1.16.1':
-            continue
-          nickname = entry['nickname']
-          live_account = entry.get('user', {}).get('liveAccount', None)
-          item_data = entry.get('itemData', {}).get('estimatedCounts', {})
-          ender_pearl_count = item_data.get('minecraft:ender_pearl', None)
-          blaze_rod_count = item_data.get('minecraft:blaze_rod', None)
+                    if world_id not in sent_world_ids or max_igt > sent_world_ids[world_id][1]:
+                        # get basic data
+                        game_version = entry.get('gameVersion', None)
+                        if game_version != '1.16.1':
+                            continue
+                        nickname = entry['nickname']
+                        live_account = entry.get('user', {}).get('liveAccount', None)
+                        item_data = entry.get('itemData', {}).get('estimatedCounts', {})
+                        ender_pearl_count = item_data.get('minecraft:ender_pearl', None)
+                        blaze_rod_count = item_data.get('minecraft:blaze_rod', None)
 
-          events_info = f'eventId: {event_id}, igt: {max_igt}'
+                        events_info = f'eventId: {event_id}, igt: {max_igt}'
 
-          # get all pace
-          list_pace = await get_all_pace()
-          if list_pace == -1:
-            # log
-            print('not exist pacemanbot-runner-pbpaces channel')
+                        # get all pace
+                        list_pace = await get_all_pace()
+                        if list_pace == -1:
+                            # log
+                            print('not exist pacemanbot-runner-pbpaces channel')
 
-          found = False
-          for i in range(0, len(list_pace), 7):
-            if list_pace[i] in nickname:
-              # add :00
-              for m in range(1, 7):
-                if list_pace[i + m].find(':') == -1:
-                  list_pace[i + m] = f'{list_pace[i + m]}:00'
-              found = True
-              break
+                        found = False
+                        for i in range(0, len(list_pace), 7):
+                            if list_pace[i] in nickname:
+                                # add :00
+                                for m in range(1, 7):
+                                    if list_pace[i + m].find(':') == -1:
+                                        list_pace[i + m] = f'{list_pace[i + m]}:00'
+                                found = True
+                                break
 
-          # continue if user not found
-          if not found:
-            continue
+                        # continue if user not found
+                        if not found:
+                            continue
 
-          # continue if not in events
-          if event_id not in {'rsg.enter_bastion', 'rsg.enter_fortress', 'rsg.first_portal', 'rsg.enter_stronghold', 'rsg.enter_end', 'rsg.credits'}:
-            continue
+                        # continue if not in events
+                        if event_id not in {'rsg.enter_bastion', 'rsg.enter_fortress', 'rsg.first_portal', 'rsg.enter_stronghold', 'rsg.enter_end', 'rsg.credits'}:
+                            continue
 
-          # log
-          print(
-            f'worldId: {world_id}\n'
-            f'nickname: {nickname}\n'
-            f'gameVersion: {game_version}\n'
-            f'liveAccount: {live_account}\n'
-            f'ender_pearl: {ender_pearl_count}, blaze_rod: {blaze_rod_count}\n'
-            f'{events_info}'
-          )
-          print(f'find name, pb pace and pb: {list_pace[i]}/{list_pace[i+1]}/{list_pace[i+2]}/{list_pace[i+3]}/{list_pace[i+4]}/{list_pace[i+5]}/{list_pace[i+6]}') # name/fs/ss/b/e/ee/pb
-          
-          # set data
-          dt_now = datetime.datetime.now()
-          time = convert_to_hh_mm_ss(max_igt)
-          ss_time = list_pace[i + 2]
-          b_time = list_pace[i + 3]
-          e_time = list_pace[i + 4]
-          ee_time = list_pace[i + 5]
-          pb_time = list_pace[i + 6]
-          pbtitle= ''
-          pbdif = ''
-          item = ''
-          role = None
+                        # log
+                        print(
+                            f'worldId: {world_id}\n'
+                            f'nickname: {nickname}\n'
+                            f'gameVersion: {game_version}\n'
+                            f'liveAccount: {live_account}\n'
+                            f'ender_pearl: {ender_pearl_count}, blaze_rod: {blaze_rod_count}\n'
+                            f'{events_info}'
+                        )
+                        print(f'find name, pb pace and pb: {list_pace[i]}/{list_pace[i+1]}/{list_pace[i+2]}/{list_pace[i+3]}/{list_pace[i+4]}/{list_pace[i+5]}/{list_pace[i+6]}') # name/fs/ss/b/e/ee/pb
+                        
+                        # set data
+                        dt_now = datetime.datetime.now()
+                        time = convert_to_hh_mm_ss(max_igt)
+                        ss_time = list_pace[i + 2]
+                        b_time = list_pace[i + 3]
+                        e_time = list_pace[i + 4]
+                        ee_time = list_pace[i + 5]
+                        pb_time = list_pace[i + 6]
+                        pbtitle= ''
+                        pbdif = ''
+                        item = ''
+                        role = None
 
-          # get role and misc
-          if event_id == 'rsg.enter_bastion' or event_id == 'rsg.enter_fortress':
-            if world_id in sent_world_ids:
-              if sent_world_ids[world_id][0] == 'rsg.enter_bastion' or sent_world_ids[world_id][0] == 'rsg.enter_fortress':
-                if time_to_seconds(ss_time) > time_to_seconds(time):
-                  role = discord.utils.get(guild.roles, name='*SSPB')
-                else:
-                  role = discord.utils.get(guild.roles, name='*SS')
-              else:
-                role = discord.utils.get(guild.roles, name='*FS')
-            else:
-              role = discord.utils.get(guild.roles, name='*FS')
+                        # get role and misc
+                        if event_id == 'rsg.enter_bastion' or event_id == 'rsg.enter_fortress':
+                            if world_id in sent_world_ids:
+                                if sent_world_ids[world_id][0] == 'rsg.enter_bastion' or sent_world_ids[world_id][0] == 'rsg.enter_fortress':
+                                    if time_to_seconds(ss_time) > time_to_seconds(time):
+                                        role = discord.utils.get(guild.roles, name='*SSPB')
+                                    else:
+                                        role = discord.utils.get(guild.roles, name='*SS')
+                                else:
+                                    role = discord.utils.get(guild.roles, name='*FS')
+                            else:
+                                role = discord.utils.get(guild.roles, name='*FS')
 
-          elif event_id == 'rsg.first_portal':
-            if time_to_seconds(b_time) > time_to_seconds(time):
-              role = discord.utils.get(guild.roles, name='*BPB')
-            else:
-              role = discord.utils.get(guild.roles, name='*B')
+                        elif event_id == 'rsg.first_portal':
+                            if time_to_seconds(b_time) > time_to_seconds(time):
+                                role = discord.utils.get(guild.roles, name='*BPB')
+                            else:
+                                role = discord.utils.get(guild.roles, name='*B')
 
-          elif event_id == 'rsg.enter_stronghold':
-            if time_to_seconds(e_time) > time_to_seconds(time):
-              role = discord.utils.get(guild.roles, name='*EPB')
-            else:
-              role = discord.utils.get(guild.roles, name='*E')
+                        elif event_id == 'rsg.enter_stronghold':
+                            if time_to_seconds(e_time) > time_to_seconds(time):
+                                role = discord.utils.get(guild.roles, name='*EPB')
+                            else:
+                                role = discord.utils.get(guild.roles, name='*E')
 
-          elif event_id == 'rsg.enter_end':
-            if time_to_seconds(ee_time) > time_to_seconds(time):     
-              dif = string_to_datetime(list_pace[i+6]) - string_to_datetime(time)
-              pbdif = f'  Exceed the PB in {convert_to_unix_time(dt_now, dif)}'
-              role = discord.utils.get(guild.roles, name='*EEPB')
-            else:
-              role = discord.utils.get(guild.roles, name='*EE')
-          
-          elif event_id == 'rsg.credits':
-            if time_to_seconds(pb_time) > time_to_seconds(time):
-              pbtitle = ' New PB!!    '
-              dif = string_to_datetime(list_pace[i+6]) - string_to_datetime(time)
-              pbdif = f'  (-{str(dif)[2:]})'
-              role = discord.utils.get(guild.roles, name='*NPB')
-            elif time_to_seconds(pb_time) == time_to_seconds(time):
-              pbtitle = ' New PB??    '   
-              dif = string_to_datetime(list_pace[i+6]) - string_to_datetime(time)
-              pbdif = f'  (±{str(dif)[2:]})'
-              role = discord.utils.get(guild.roles, name='*NPB')
-            else:
-              role = discord.utils.get(guild.roles, name='*FIN')
-              dif = string_to_datetime(time) - string_to_datetime(list_pace[i+6])
-              pbdif = f'  (+{str(dif)[2:]})'
-          
-          # item tracker
-          if ender_pearl_count:
-            item += f'{discord.utils.get(guild.emojis, name=get_emoji_name('ender_pearl'))} {ender_pearl_count}  '
-          if blaze_rod_count:
-            item += f'{discord.utils.get(guild.emojis, name=get_emoji_name('blaze_rod'))} {blaze_rod_count}  '
-          item = item.strip()
+                        elif event_id == 'rsg.enter_end':
+                            if time_to_seconds(ee_time) > time_to_seconds(time):     
+                                dif = string_to_datetime(list_pace[i+6]) - string_to_datetime(time)
+                                pbdif = f'  (Exceed the PB in {convert_to_unix_time(dt_now, dif)})'
+                                role = discord.utils.get(guild.roles, name='*EEPB')
+                            else:
+                                role = discord.utils.get(guild.roles, name='*EE')
+                          
+                        elif event_id == 'rsg.credits':
+                            if time_to_seconds(pb_time) > time_to_seconds(time):
+                                pbtitle = ' New PB!!    '
+                                dif = string_to_datetime(list_pace[i+6]) - string_to_datetime(time)
+                                pbdif = f'  (-{str(dif)[2:]})'
+                                role = discord.utils.get(guild.roles, name='*NPB')
+                            elif time_to_seconds(pb_time) == time_to_seconds(time):
+                                pbtitle = ' New PB??    '   
+                                dif = string_to_datetime(list_pace[i+6]) - string_to_datetime(time)
+                                pbdif = f'  (±{str(dif)[2:]})'
+                                role = discord.utils.get(guild.roles, name='*NPB')
+                            else:
+                                role = discord.utils.get(guild.roles, name='*FIN')
+                                dif = string_to_datetime(time) - string_to_datetime(list_pace[i+6])
+                                pbdif = f'  (+{str(dif)[2:]})'
+                          
+                        # item tracker
+                        if ender_pearl_count:
+                            item += f'{discord.utils.get(guild.emojis, name=get_emoji_name('ender_pearl'))} {ender_pearl_count}  '
+                        if blaze_rod_count:
+                            item += f'{discord.utils.get(guild.emojis, name=get_emoji_name('blaze_rod'))} {blaze_rod_count}  '
+                        item = item.strip()
 
-          # write message
-          message = (
-            f'## {discord.utils.get(guild.emojis, name=get_emoji_name(event_id))}  {pbtitle}{time} - {convert_to_eventname(event_id)}\n'
-            f'**PB - {list_pace[i + 6]}{pbdif}**\n'
-            f'{convert_to_twitchlink(nickname, live_account)}    {convert_to_statslink(world_id)}    {convert_to_unix_time(dt_now, '00:00:00')}\n'
-          )
-          if item:
-            message += f'{item}\n'
-          if role is not None:
-            message += (
-              f'-# <@&{role.id}>'
-            )
-          else:
-            message += '-# role not found'
+                        # write message
+                        message = (
+                            f'## {discord.utils.get(guild.emojis, name=get_emoji_name(event_id))}  {pbtitle}{time} - {convert_to_eventname(event_id)}\n'
+                            f'**PB - {list_pace[i + 6]}{pbdif}**\n'
+                            f'{convert_to_twitchlink(nickname, live_account)}    {convert_to_statslink(world_id)}    {convert_to_unix_time(dt_now, '00:00:00')}\n'
+                        )
+                        if item:
+                            message += f'{item}\n'
+                        if role is not None:
+                            message += (
+                                f'-# <@&{role.id}>'
+                            )
+                        else:
+                            message += '-# role not found'
 
-          # choose send channle
-          if role and 'PB' in role.name:
-            channel = get_channel_by_name(guild, 'pb-pace')
-          else:
-            channel = get_channel_by_name(guild, 'not-pb-pace')
-          
-          # send message
-          if channel is not None:
-            await channel.send(message)
+                        # choose send channel
+                        if role and 'PB' in role.name:
+                            channel = get_channel_by_name(guild, 'pb-pace')
+                        else:
+                            channel = get_channel_by_name(guild, 'not-pb-pace')
+                        
+                        # send message
+                        if channel is not None:
+                            await channel.send(message)
 
-          # save eventid and igt in worldid
-          sent_world_ids[world_id] = [event_id, max_igt]
-    
-    # loop delay
-    await asyncio.sleep(5)
+                        # save event id and igt in world id
+                        sent_world_ids[world_id] = [event_id, max_igt]
+
+            # loop delay
+            await asyncio.sleep(10)
+
+        except Exception as e:
+            print(f"An error occurred: {e}. Retrying in 60 seconds...")
+            await asyncio.sleep(60)  # Wait for 1 minute before retrying
 
 
 # Commands
