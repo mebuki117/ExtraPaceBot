@@ -166,6 +166,12 @@ async def send_nicknames_periodically():
                                 dif = string_to_datetime(time) - string_to_datetime(list_pace[i+6])
                                 pbdif = f'  (+{str(dif)[2:]})'
                           
+                        # pb time
+                        if event_id == 'rsg.credits' and time_to_seconds(pb_time) > time_to_seconds(time):
+                          pb = f'FPB'
+                        else:
+                          pb = f'PB'
+
                         # item tracker
                         if ender_pearl_count:
                             item += f'{discord.utils.get(guild.emojis, name=get_emoji_name('ender_pearl'))} {ender_pearl_count}  '
@@ -176,7 +182,7 @@ async def send_nicknames_periodically():
                         # write message
                         message = (
                             f'## {discord.utils.get(guild.emojis, name=get_emoji_name(event_id))}  {pbtitle}{time} - {convert_to_eventname(event_id)}\n'
-                            f'**PB - {list_pace[i + 6]}{pbdif}**\n'
+                            f'**{pb} - {list_pace[i + 6]}{pbdif}**\n'
                             f'{convert_to_twitchlink(nickname, live_account)}    {convert_to_statslink(world_id)}    {convert_to_unix_time(dt_now, '00:00:00')}\n'
                         )
                         if item:
