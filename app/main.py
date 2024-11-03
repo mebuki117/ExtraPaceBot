@@ -74,6 +74,8 @@ async def send_nicknames_periodically():
                         if list_pace == -1:
                             # log
                             print('not exist pacemanbot-runner-pbpaces channel')
+                        # log
+                        print(list_pace)
 
                         found = False
                         for i in range(0, len(list_pace), 7):
@@ -212,7 +214,7 @@ async def send_nicknames_periodically():
 
         except Exception as e:
             print(f"An error occurred: {e}. Retrying in 60 seconds...")
-            await asyncio.sleep(60)  # Wait for 1 minute before retrying
+            await asyncio.sleep(60)
 
 
 # Commands
