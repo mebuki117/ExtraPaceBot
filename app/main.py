@@ -74,8 +74,6 @@ async def send_nicknames_periodically():
                         if list_pace == -1:
                             # log
                             print('not exist pacemanbot-runner-pbpaces channel')
-                        # log
-                        print(list_pace)
 
                         found = False
                         for i in range(0, len(list_pace), 7):
@@ -96,6 +94,7 @@ async def send_nicknames_periodically():
                             continue
 
                         # log
+                        print(list_pace)
                         print(
                             f'worldId: {world_id}\n'
                             f'nickname: {nickname}\n'
